@@ -19,7 +19,6 @@ def process_email(email_path):
     mail_info = em.get_mail_info()
     res = []
     chatbot = ChatGPT()
-    breakpoint()
     for mail in mail_info:
         state, data = chatbot.get_content(mail)
         if state == 'Succeed':
