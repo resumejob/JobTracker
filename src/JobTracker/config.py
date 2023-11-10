@@ -1,4 +1,15 @@
-API_KEY = 'your_api_key'
+API_KEY = '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'
+MODEL = 'gpt-4-1106-preview'
+PRICE = {
+            "gpt-4-1106-preview": (0.01, 0.03),
+            "gpt-4-1106-vision-preview": (0.01, 0.03),
+            "gpt-4-32k-0314": (0.06, 0.12),
+            "gpt-4-0314": (0.03, 0.06),
+            "gpt-4-32k-0613": (0.06, 0.12),
+            "gpt-4-0613": (0.03, 0.06),
+            "gpt-3.5-turbo-16k-0613": (0.0010, 0.0020),
+            "gpt-3.5-turbo-0613": (0.0015, 0.0020)
+        }
 KEYWORD = set(['received', 'confirmation', 'apply', 'application', 'reviewing', 'interview', 'schedule', 'resume', 'evaluating', 'screening', 'assessment', 'hiring', 'onboarding', 'offer', 'salary', 'unfortunately', 'rejection', 'forword', 'feedback', 'interested'])
 FUNCTION = [
     {
