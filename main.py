@@ -19,7 +19,6 @@ def process_email(email_path):
     mail_info = em.get_mail_info()
     res = []
     chatbot = ChatGPT()
-    #TODO: add cost of the run
     chatbot.get_cost(mail_info)
     print("Enter Y to Process, N to STOP")
     while True:
@@ -30,7 +29,8 @@ def process_email(email_path):
         elif k == "N" or k == "n":
             print("---------Stop processing emails---------")
             return
-
+        else:
+            print("Enter Y to Process, N to STOP")
     for mail in mail_info:
         state, data = chatbot.get_content(mail)
         if state == 'Succeed':

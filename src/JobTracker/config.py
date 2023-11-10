@@ -1,4 +1,4 @@
-API_KEY = 'your_api_key'
+API_KEY = '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'
 MODEL = 'gpt-4-1106-preview'
 KEYWORD = set(['received', 'confirmation', 'apply', 'application', 'reviewing', 'interview', 'schedule', 'resume', 'evaluating', 'screening', 'assessment', 'hiring', 'onboarding', 'offer', 'salary', 'unfortunately', 'rejection', 'forword', 'feedback', 'interested'])
 FUNCTION = [

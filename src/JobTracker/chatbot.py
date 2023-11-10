@@ -30,9 +30,9 @@ class ChatGPT(ChatBot):
         for mail in mails:
             message.append({'role': 'user', 'content': self.gen_prompt(mail['body'])})
         token = self.num_tokens_from_messages(message, MODEL)
-        prices = self.pricing_for_1k_tokens(token, MODEL)
+        prices = self.pricing_for_1k_tokens(MODEL)
         input_price = prices[0] * token/1000.0
-        print(f"{token} prompt tokens in total. Need $ f{str(input_price)} for input.")
+        print(f"{token} prompt tokens in total. Need $ {str(round(input_price, 5))} for input.")
 
     
     def gen_prompt(self, info):
