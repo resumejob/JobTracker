@@ -15,9 +15,9 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
 class EmailMessage:
 
-    def __init__(self, mbox_path, old_csv_path):
+    def __init__(self, mbox_path, old_csv_mails):
         self.mail_lst = mailbox.mbox(mbox_path)
-        self.old_mail_list = self.get_old_csv_hash_list(old_csv_path)
+        self.old_mail_list = self.get_old_csv_hash_list(old_csv_mails)
         self.url_pattern = re.compile(
             r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
@@ -79,10 +79,9 @@ class EmailMessage:
                     info['length'] = len(body)
                     res.append(info)
         return res
-
-    def get_old_csv_hash_list(self, old_csv_path):
+    
+    def get_old_csv_hash_list(self, mails):
         old_pools = set()
-        mails = self.read_csv(old_csv_path)
         for mail in mails:
             concatenated_key = mail['sender_mail'] + mail['date']
             old_pools.add(self.get_hash(concatenated_key))
@@ -92,17 +91,4 @@ class EmailMessage:
         return hashlib.sha256(key.encode()).hexdigest()
 
 
-    def read_csv(self, filename):
-        data = []
-        try:
-            with open(filename, mode='r', newline='', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile)
-                for row in reader:
-                    data.append(row)
-        except FileNotFoundError as e:
-            logging.warning(f"File not found or path incorrect: {e}")
-            return []
-        except Exception as e:
-            logging.warning(f"Error reading the file: {e}")
-            return []
-        return data
+    

@@ -14,7 +14,7 @@ def process_email(email_path, old_csv_path):
     :param email_path: Path to the email file or directory
     :return: List of processed email data
     '''
-    em = EmailMessage(email_path, old_csv_path)
+    em = EmailMessage(email_path, read_csv(old_csv_path))
     mail_info = em.get_mail_info()
     res = []
     chatbot = ChatGPT()
@@ -42,6 +42,20 @@ def export_to_csv(data, filename):
         for row in data:
             writer.writerow(row)
 
+def read_csv(filename):
+    data = []
+    try:
+        with open(filename, mode='r', newline='', encoding='utf-8') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                data.append(row)
+    except FileNotFoundError as e:
+        logging.warning(f"File not found or path incorrect: {e}")
+        return []
+    except Exception as e:
+        logging.warning(f"Error reading the file: {e}")
+        return []
+    return data
 
 
 def main(email_path, output_csv, old_csv):
