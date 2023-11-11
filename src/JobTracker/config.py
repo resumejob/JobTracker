@@ -1,4 +1,4 @@
-API_KEY = 'your_api_key'
+API_KEY = ''
 KEYWORD = set(['received', 'confirmation', 'apply', 'application', 'reviewing', 'interview', 'schedule', 'resume', 'evaluating', 'screening', 'assessment', 'hiring', 'onboarding', 'offer', 'salary', 'unfortunately', 'rejection', 'forword', 'feedback', 'interested'])
 FUNCTION = [
     {

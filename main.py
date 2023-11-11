@@ -5,17 +5,16 @@ import csv
 from src.JobTracker.utils import EmailMessage
 from src.JobTracker.chatbot import ChatGPT
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-def process_email(email_path):
+def process_email(email_path, old_csv_path):
     '''
     Process the emails at the given path and return the results.
 
     :param email_path: Path to the email file or directory
     :return: List of processed email data
     '''
-    em = EmailMessage(email_path)
+    em = EmailMessage(email_path, old_csv_path)
     mail_info = em.get_mail_info()
     res = []
     chatbot = ChatGPT()
@@ -33,8 +32,10 @@ def export_to_csv(data, filename):
         for row in data:
             writer.writerow(row)
 
-def main(email_path, output_csv):
-    result = process_email(email_path)
+
+
+def main(email_path, output_csv, old_csv):
+    result = process_email(email_path, old_csv)
     if result:
         export_to_csv(result, output_csv)
         logging.info(f"Processed emails successfully and exported to CSV at {output_csv}.")
@@ -52,5 +53,10 @@ if __name__ == "__main__":
                         help='The output path for the CSV file',
                         default='emails.csv',  # Default output filename if not specified
                         required=False)
+    parser.add_argument("-d", '--old',
+                        type=str,
+                        help='The old CSV file to avoid duplicate',
+                        default=None,
+                        required=False)
     args = parser.parse_args()
-    main(args.path, args.output)
+    main(args.path, args.output, args.old)

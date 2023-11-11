@@ -1,16 +1,23 @@
 import re
+import csv
+import logging
 import email.utils
 import mailbox
+import hashlib
 import requests
 from .config import KEYWORD
 from email.header import decode_header
 from email.utils import parseaddr
 from bs4 import BeautifulSoup
 
+
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+
 class EmailMessage:
 
-    def __init__(self, mbox_path):
+    def __init__(self, mbox_path, old_csv_path):
         self.mail_lst = mailbox.mbox(mbox_path)
+        self.old_mail_list = self.get_old_csv_hash_list(old_csv_path)
         self.url_pattern = re.compile(
             r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
@@ -53,21 +60,49 @@ class EmailMessage:
         # Loop over every mail and get info
         for mail in self.mail_lst:
             info = dict()
-            subject = decode_header(mail['subject'])
-            subject = ''.join(part.decode(charset or 'utf-8') if isinstance(part, bytes) else part
-                              for part, charset in subject)
-            sender_name, sender_mail = email.utils.parseaddr(mail['from'])
-            recipient_name, recipient_mail = email.utils.parseaddr(mail['to'])
             date = mail['date']
-            body = self.get_mail_body(mail)
-            if self.related_to_application(body + subject):
-                info['subject'] = subject
-                info['sender_name'] = sender_name
-                info['sender_mail'] = sender_mail
-                info['recipient_name'] = recipient_name
-                info['recipient_mail'] = recipient_mail
-                info['date'] = date
-                info['body'] = body
-                info['length'] = len(body)
-                res.append(info)
+            sender_name, sender_mail = email.utils.parseaddr(mail['from'])
+            if self.get_hash(sender_mail+date) not in self.old_mail_list:
+                subject = decode_header(mail['subject'])
+                subject = ''.join(part.decode(charset or 'utf-8') if isinstance(part, bytes) else part
+                                for part, charset in subject)
+                recipient_name, recipient_mail = email.utils.parseaddr(mail['to'])
+                body = self.get_mail_body(mail)
+                if self.related_to_application(body + subject):
+                    info['subject'] = subject
+                    info['sender_name'] = sender_name
+                    info['sender_mail'] = sender_mail
+                    info['recipient_name'] = recipient_name
+                    info['recipient_mail'] = recipient_mail
+                    info['date'] = date
+                    info['body'] = body
+                    info['length'] = len(body)
+                    res.append(info)
         return res
+
+    def get_old_csv_hash_list(self, old_csv_path):
+        old_pools = set()
+        mails = self.read_csv(old_csv_path)
+        for mail in mails:
+            concatenated_key = mail['sender_mail'] + mail['date']
+            old_pools.add(self.get_hash(concatenated_key))
+        return old_pools
+    
+    def get_hash(self, key):
+        return hashlib.sha256(key.encode()).hexdigest()
+
+
+    def read_csv(self, filename):
+        data = []
+        try:
+            with open(filename, mode='r', newline='', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    data.append(row)
+        except FileNotFoundError as e:
+            logging.warning(f"File not found or path incorrect: {e}")
+            return []
+        except Exception as e:
+            logging.warning(f"Error reading the file: {e}")
+            return []
+        return data
