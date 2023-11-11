@@ -19,6 +19,16 @@ def process_email(email_path):
     mail_info = em.get_mail_info()
     res = []
     chatbot = ChatGPT()
+    message = chatbot.get_cost(mail_info)
+    logging.info(message)
+    while True:
+        k = input("Enter Y to Process, N to STOP: ")
+        if k.lower() == "y":
+            logging.info("---------Keep processing emails---------")
+            break
+        elif k.lower() == "n":
+            logging.info("---------Stop processing emails---------")
+            return
     for mail in mail_info:
         state, data = chatbot.get_content(mail)
         if state == 'Succeed':
