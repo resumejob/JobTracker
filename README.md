@@ -19,18 +19,16 @@ JobTracker that relies on email to trace application status and next step.
    # It is recommended to create a virtual environment for this project before install
    pip install -r requirements.txt
 
-2. Configure your OpenAI API key in config.py:
-
-    ````python3
-    API_KEY = 'YOUR_API_KEY'
-    ````
+2. Configure your OpenAI API key:
+    - create `.env` file under `./src/JobTracker/`
+    - fill `API_KEY = 'your_api_key'`
 
 ## Usage
 
 Export your emails in MBOX format and run the script with the following command:
 
     python3 main.py -p path_to_your_email_file.mbox -o output_filename.csv
-    
+
 Replace `path_to_your_email_file.mbox` with the path to your MBOX file and `output_filename.csv` with your desired output file name.
 
 ## How It Works
