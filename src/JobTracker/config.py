@@ -1,4 +1,3 @@
-API_KEY = 'your_api_key'
 MODEL = 'gpt-4-1106-preview'
 PRICE = {
             "gpt-4-1106-preview": (0.01, 0.03),
