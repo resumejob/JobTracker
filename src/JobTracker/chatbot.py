@@ -4,10 +4,10 @@ import tiktoken
 import logging
 from datetime import datetime
 from abc import ABC, abstractmethod
-from .config import API_KEY, FUNCTION, MODEL, PRICE
+from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE
 
 # Set the API key for OpenAI once, assuming this is a module-level operation
-openai.api_key = API_KEY
+openai.api_key = OPENAI_API_KEY
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
@@ -136,6 +136,6 @@ class ChatGPT(ChatBot):
             return PRICE["gpt-4-0314"]
         else:
             raise NotImplementedError(
-                f"""pricing_for_1k_tokens() is not implemented for model {model}. 
+                f"""pricing_for_1k_tokens() is not implemented for model {model}.
                 see https://openai.com/pricing#language-models"""
             )

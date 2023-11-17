@@ -5,9 +5,30 @@ from unittest.mock import patch, MagicMock
 from src.JobTracker.utils import EmailMessage
 from src.JobTracker.chatbot import ChatBot, ChatGPT
 
+MODEL_LIST_RETURN = {
+    "object": "list",
+    "data": [
+        {
+            "id": "gpt-3.5-turbo",
+            "object": "model",
+            "created": None,
+            "owned_by": "openai",
+        },
+        {
+            "id": "gpt-4-1106-preview",
+            "object": "model",
+            "created": None,
+            "owned_by": "openai",
+        }
+    ],
+    "model": None
+}
+
 class TestChatBot(unittest.TestCase):
 
-    def test_gen_prompt(self):
+    @patch('openai.Model.list')
+    def test_gen_prompt(self, mock_model_list):
+        mock_model_list.return_value = MODEL_LIST_RETURN
         chat_bot = ChatGPT()
         info = "test email body"
         expected_prompt = 'If this is a mail from a company I applied to or interviewed with before, ' + \
@@ -17,7 +38,9 @@ class TestChatBot(unittest.TestCase):
 
 class TestChatGPT(unittest.TestCase):
 
-    def setUp(self):
+    @patch('openai.Model.list')
+    def setUp(self, mock_model_list):
+        mock_model_list.return_value = MODEL_LIST_RETURN
         self.chat_gpt = ChatGPT()
 
     @patch('openai.ChatCompletion.create')
