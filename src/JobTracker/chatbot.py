@@ -2,6 +2,7 @@ import json
 import openai
 import tiktoken
 import logging
+import requests
 from abc import ABC, abstractmethod
 from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE
 
@@ -26,6 +27,54 @@ class ChatBot(ABC):
         pass
 
 
+class Llama(ChatBot):
+    def __init__(self) -> None:
+        super().__init__()
+        self.url = "http://127.0.0.1:11434/api/generate"
+        self.model="llama2"
+
+    def gen_prompt(self, info):
+        return super().gen_prompt(info)
+
+
+    def gen_prompt_company(self, info):
+        return ('what is the company I appied? return a json \{"Company": name\} Here is the mail body: ' + info)
+    
+    def gen_prompt_state(self, info):
+        return ('what is the state of this application? return a json \{"State": state\} Here is the mail body: ' + info)
+
+    def gen_prompt_next_step(self, info):
+        return ('what should be next step in the application process as an applicant? return a json \{"NextStep": step\} Here is the mail body: ' + info)
+    
+    def send_request(self, prompt):
+        data = {
+            "model": self.model,
+            "prompt": prompt,
+            "format": "json",
+            "stream": False
+        }
+        res = requests.post(self.url, json=data)
+        return json.loads(res.text)["response"]
+    
+    def get_content(self, info):
+        
+        prompt1 = self.gen_prompt_company(info['body'])
+        name = self.send_request(prompt1)
+        prompt2 = self.gen_prompt_state(info['body'])
+        state = self.send_request(prompt2)
+        prompt3 = self.gen_prompt_next_step(info['body'])
+        step = self.send_request(prompt3)
+        try:
+            info['company'] = json.loads(name)["Company"]
+            info['state'] = json.loads(state)["State"]
+            info['next_step'] = json.loads(step)["NextStep"]
+        except KeyError:
+            return ('Failed', 'JSON not formatted correctly')
+        except Exception:
+            return ('Failed', 'Connection to Llama failed')
+        else:
+            return ('Succeed', info)
+    
 class ChatGPT(ChatBot):
     """Concrete implementation of a ChatBot using OpenAI's GPT."""
 
