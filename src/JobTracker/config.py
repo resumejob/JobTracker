@@ -1,4 +1,7 @@
-API_KEY = 'your_api_key'
+import os
+
+
+OPENAI_API_KEY  = os.environ.get('OPENAI_API_KEY')
 MODEL = 'gpt-4-1106-preview'
 PRICE = {
             "gpt-4-1106-preview": (0.01, 0.03),
