@@ -1,6 +1,8 @@
 import json
 import unittest
+from datetime import datetime
 from unittest.mock import patch, MagicMock
+from src.JobTracker.utils import EmailMessage
 from src.JobTracker.chatbot import ChatBot, ChatGPT
 
 MODEL_LIST_RETURN = {
@@ -44,7 +46,7 @@ class TestChatGPT(unittest.TestCase):
     @patch('openai.ChatCompletion.create')
     @patch('src.JobTracker.config')
     def test_get_content_succeed(self, mock_config, mock_openai_chatcompletion_create):
-        info = {'body': 'test email body'}
+        info = {'body': 'test email body', 'date': "Thu, 09 Nov 2023 23:27:06 +0000"}
         mock_config.API_KEY = 'test_api_key'
         mock_config.FUNCTION = 'test_function'
         # Mock the API response
@@ -64,9 +66,11 @@ class TestChatGPT(unittest.TestCase):
         mock_response.choices = [mock_choice]
         mock_openai_chatcompletion_create.return_value = mock_response
         state, data = self.chat_gpt.get_content(info)
+        date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z")
+        month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
         self.assertEqual(state, 'Succeed')
         self.assertEqual(data['company'], 'TestCompany')
-        self.assertEqual(data['state'], 'TestState')
+        self.assertEqual(data['state'], json.dumps({"TestState": month_day_year_time}))
         self.assertEqual(data['next_step'], 'TestNextStep')
 
     @patch('openai.ChatCompletion.create')
@@ -87,6 +91,41 @@ class TestChatGPT(unittest.TestCase):
 
         self.assertEqual(state, 'Failed')
         self.assertEqual(data, 'Not related to a job application or interview process')
+
+    @patch('mailbox.mbox', return_value=MagicMock())
+    @patch('openai.ChatCompletion.create')
+    @patch('src.JobTracker.config')
+    def test_avoid_hash_success(self,  mock_config, mock_openai_chatcompletion_create, mock_mbox):
+        info = {'body': 'test email body', 'date': "Thu, 09 Nov 2023 23:27:06 +0000", "sender_mail" : "noreply@careers.tiktok.com"}
+        mock_config.API_KEY = 'test_api_key'
+        mock_config.FUNCTION = 'test_function'
+        # Mock the API response
+        mock_choice = MagicMock()
+        mock_choice.finish_reason = 'function_call'
+        mock_choice.message = {
+            'function_call': {
+                'arguments': json.dumps({
+                    'company': 'TestCompany',
+                    'state': 'TestState',
+                    'next_step': 'TestNextStep'
+                })
+            }
+        }
+        oldMail = {"sender_mail" : '["noreply@careers.tiktok.com"]', 'date': '["Thu, 09 Nov 2023 23:27:06 +0000"]'}
+        
+        self.mbox_path = 'path/to/mbox'
+        self.mbox_old_path = ''
+        self.email_message = EmailMessage(self.mbox_path, self.mbox_old_path)
+
+        pool = self.email_message.get_old_csv_hash_list([oldMail])
+       
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+        mock_openai_chatcompletion_create.return_value = mock_response
+        state, data = self.chat_gpt.get_content(info)
+
+        self.assertEqual(state, 'Succeed')
+        self.assertEqual(self.email_message.get_hash(data['sender_mail'] + data['date']) in pool, True)
 
 
 if __name__ == '__main__':

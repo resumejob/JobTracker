@@ -14,7 +14,8 @@ class TestEmailMessage(unittest.TestCase):
     @patch('mailbox.mbox', return_value=MagicMock())
     def setUp(self, mock_mbox):
         self.mbox_path = 'path/to/mbox'
-        self.email_message = EmailMessage(self.mbox_path)
+        self.mbox_old_path = ''
+        self.email_message = EmailMessage(self.mbox_path, self.mbox_old_path)
 
     def test_clenup_body(self):
         text = "This is a test message. Visit http://example.com for details.\r\nNew line here."

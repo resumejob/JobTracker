@@ -1,7 +1,10 @@
 import re
 import email.utils
 import mailbox
+import hashlib
 import requests
+import json
+import ast
 from .config import KEYWORD
 from email.header import decode_header
 from email.utils import parseaddr
@@ -9,8 +12,9 @@ from bs4 import BeautifulSoup
 
 class EmailMessage:
 
-    def __init__(self, mbox_path):
+    def __init__(self, mbox_path, old_csv_mails):
         self.mail_lst = mailbox.mbox(mbox_path)
+        self.old_mail_list = self.get_old_csv_hash_list(old_csv_mails)
         self.url_pattern = re.compile(
             r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
@@ -53,21 +57,38 @@ class EmailMessage:
         # Loop over every mail and get info
         for mail in self.mail_lst:
             info = dict()
-            subject = decode_header(mail['subject'])
-            subject = ''.join(part.decode(charset or 'utf-8') if isinstance(part, bytes) else part
-                              for part, charset in subject)
-            sender_name, sender_mail = email.utils.parseaddr(mail['from'])
-            recipient_name, recipient_mail = email.utils.parseaddr(mail['to'])
             date = mail['date']
-            body = self.get_mail_body(mail)
-            if self.related_to_application(body + subject):
-                info['subject'] = subject
-                info['sender_name'] = sender_name
-                info['sender_mail'] = sender_mail
-                info['recipient_name'] = recipient_name
-                info['recipient_mail'] = recipient_mail
-                info['date'] = date
-                info['body'] = body
-                info['length'] = len(body)
-                res.append(info)
+            sender_name, sender_mail = email.utils.parseaddr(mail['from'])
+            if self.get_hash(sender_mail+date) not in self.old_mail_list:
+                subject = decode_header(mail['subject'])
+                subject = ''.join(part.decode(charset or 'utf-8') if isinstance(part, bytes) else part
+                                for part, charset in subject)
+                recipient_name, recipient_mail = email.utils.parseaddr(mail['to'])
+                body = self.get_mail_body(mail)
+                if self.related_to_application(body + subject):
+                    info['subject'] = subject
+                    info['sender_name'] = sender_name
+                    info['sender_mail'] = sender_mail
+                    info['recipient_name'] = recipient_name
+                    info['recipient_mail'] = recipient_mail
+                    info['date'] = date
+                    info['body'] = body
+                    info['length'] = len(body)
+                    res.append(info)
         return res
+    
+
+    def get_old_csv_hash_list(self, mails):
+        if not mails:
+            return {}
+        old_pools = set()
+        for mail in mails:
+            sender = ast.literal_eval(mail['sender_mail'])
+            date = ast.literal_eval(mail['date'])
+            for index in range(len(sender)):
+                key = sender[index] + date[index]
+                old_pools.add(self.get_hash(key))
+        return old_pools
+    
+    def get_hash(self, key):
+        return hashlib.sha256(key.encode()).hexdigest()

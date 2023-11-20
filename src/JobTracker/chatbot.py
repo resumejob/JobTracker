@@ -2,6 +2,7 @@ import json
 import openai
 import tiktoken
 import logging
+from datetime import datetime
 from abc import ABC, abstractmethod
 from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE
 
@@ -79,6 +80,17 @@ class ChatGPT(ChatBot):
                 except KeyError:
                     return ('Failed', 'JSON not formatted correctly')
                 else:
+                    try:
+                        date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z")
+                        month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
+                    except ValueError:
+                        try:
+                            date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z (%Z)")
+                            month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
+                        except ValueError:
+                            logging.warn("Unable to parse date")
+                    info['state'] = json.dumps({info['state']:month_day_year_time})
+                    info['rank'] = date_object
                     return ('Succeed', info)
             else:
                 return ('Failed', 'Not related to a job application or interview process')
