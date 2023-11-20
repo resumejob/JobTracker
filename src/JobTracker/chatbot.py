@@ -88,7 +88,7 @@ class ChatGPT(ChatBot):
                             date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z (%Z)")
                             month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
                         except ValueError:
-                            print("Unable to parse date")
+                            logging.warn("Unable to parse date")
                     info['state'] = json.dumps({info['state']:month_day_year_time})
                     info['rank'] = date_object
                     return ('Succeed', info)
