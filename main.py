@@ -1,6 +1,8 @@
 import argparse
 import logging
 import csv
+import json
+from datetime import datetime
 
 from src.JobTracker.utils import EmailMessage
 from src.JobTracker.chatbot import ChatGPT
@@ -29,10 +31,24 @@ def process_email(email_path):
         elif k.lower() == "n":
             logging.info("---------Stop processing emails---------")
             return
+    company = {}
     for mail in mail_info:
         state, data = chatbot.get_content(mail)
         if state == 'Succeed':
-            res.append(data)
+            if data['company'] not in company:
+                company[data['company']] = len(res)
+                res.append(data)
+            else:
+                state1 = res[company[data['company']]]['state']
+                state1_dict = json.loads(state1)
+                state2_dict = json.loads(mail['state'])
+                state1_dict.update(state2_dict)
+                date_objects = {key: datetime.strptime(value, '%b %d %Y %H:%M:%S') for key, value in state1_dict.items()}
+                sorted_date = dict(sorted(date_objects.items(), key=lambda item: item[1]))
+                sorted_date_dict = {key: date.strftime('%b %d %Y %H:%M:%S') for key, date in sorted_date.items()}
+                res[company[data['company']]]['state'] = json.dumps(sorted_date_dict)
+                if list(state2_dict.items()) == list(sorted_date_dict.items())[-1]:
+                    res[company[data['company']]]['next_step'] = mail['next_step']
     return res
 
 def export_to_csv(data, filename):
