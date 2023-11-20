@@ -2,6 +2,9 @@ import os
 
 
 OPENAI_API_KEY  = os.environ.get('OPENAI_API_KEY')
+LOCAL_MODEL="llama2"
+LOCAL_MODEL_URL = "http://127.0.0.1:11434/api/generate"
+
 MODEL = 'gpt-4-1106-preview'
 PRICE = {
             "gpt-4-1106-preview": (0.01, 0.03),

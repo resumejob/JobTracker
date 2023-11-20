@@ -90,6 +90,7 @@ class ChatGPT(ChatBot):
                         except ValueError:
                             print("Unable to parse date")
                     info['state'] = json.dumps({info['state']:month_day_year_time})
+                    info['rank'] = date_object
                     return ('Succeed', info)
             else:
                 return ('Failed', 'Not related to a job application or interview process')

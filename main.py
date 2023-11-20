@@ -3,7 +3,7 @@ import logging
 import csv
 import json
 from datetime import datetime
-
+from collections import defaultdict
 from src.JobTracker.utils import EmailMessage
 from src.JobTracker.chatbot import ChatGPT
 
@@ -31,24 +31,21 @@ def process_email(email_path):
         elif k.lower() == "n":
             logging.info("---------Stop processing emails---------")
             return
-    company = {}
+    companys = defaultdict(list)
+    key = ['subject', 'sender_name', 'sender_mail', 'recipient_name', 'recipient_mail', 'date', 'body', 'length', 'company', 'state', 'next_step', 'rank']
     for mail in mail_info:
         state, data = chatbot.get_content(mail)
-        if state == 'Succeed':
-            if data['company'] not in company:
-                company[data['company']] = len(res)
-                res.append(data)
-            else:
-                state1 = res[company[data['company']]]['state']
-                state1_dict = json.loads(state1)
-                state2_dict = json.loads(mail['state'])
-                state1_dict.update(state2_dict)
-                date_objects = {key: datetime.strptime(value, '%b %d %Y %H:%M:%S') for key, value in state1_dict.items()}
-                sorted_date = dict(sorted(date_objects.items(), key=lambda item: item[1]))
-                sorted_date_dict = {key: date.strftime('%b %d %Y %H:%M:%S') for key, date in sorted_date.items()}
-                res[company[data['company']]]['state'] = json.dumps(sorted_date_dict)
-                if list(state2_dict.items()) == list(sorted_date_dict.items())[-1]:
-                    res[company[data['company']]]['next_step'] = mail['next_step']
+        if state == 'Succeed':  
+            content = list(data.values())
+            companys[data['company']].append(content)
+
+    for content in companys.values():
+        if len(content) != 0:
+            content.sort(key=lambda a: a[-1])
+            combined_list = [list(column) for column in zip(*content)]
+            data = dict(zip(key[:-1], combined_list[:-1]))
+            data["next_step"] = data["next_step"][-1]
+            res.append(data)
     return res
 
 def export_to_csv(data, filename):
