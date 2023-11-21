@@ -3,8 +3,9 @@ import openai
 import tiktoken
 import logging
 import requests
+from datetime import datetime
 from abc import ABC, abstractmethod
-from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE
+from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE, LLAMA_URL, LLAMA_MODEL
 
 # Set the API key for OpenAI once, assuming this is a module-level operation
 openai.api_key = OPENAI_API_KEY
@@ -30,21 +31,21 @@ class ChatBot(ABC):
 class Llama(ChatBot):
     def __init__(self) -> None:
         super().__init__()
-        self.url = "http://127.0.0.1:11434/api/generate"
-        self.model="llama2"
+        self.url = LLAMA_URL
+        self.model= LLAMA_MODEL
 
     def gen_prompt(self, info):
         return super().gen_prompt(info)
 
 
     def gen_prompt_company(self, info):
-        return ('what is the company I appied? return a json \{"Company": name\} Here is the mail body: ' + info)
+        return ('what is the company I appied? return a json \{"Company": string\} Here is the mail body: ' + info)
     
     def gen_prompt_state(self, info):
-        return ('what is the state of this application? return a json \{"State": state\} Here is the mail body: ' + info)
+        return ('what is the state of this application? return a json \{"State": string\} Here is the mail body: ' + info)
 
     def gen_prompt_next_step(self, info):
-        return ('what should be next step in the application process as an applicant? return a json \{"NextStep": step\} Here is the mail body: ' + info)
+        return ('what should be next step in the application process as an applicant? return a json \{"NextStep": string\} Here is the mail body: ' + info)
     
     def send_request(self, prompt):
         data = {
@@ -73,6 +74,18 @@ class Llama(ChatBot):
         except Exception:
             return ('Failed', 'Connection to Llama failed')
         else:
+            try:
+                date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z")
+                month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
+            except ValueError:
+                try:
+                    date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z (%Z)")
+                    month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
+                except ValueError:
+                    logging.warn("Unable to parse date")
+            print(info)
+            info['state'] = json.dumps({info['state']:month_day_year_time})
+            info['rank'] = date_object
             return ('Succeed', info)
     
 class ChatGPT(ChatBot):
