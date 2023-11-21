@@ -5,7 +5,7 @@ import logging
 import requests
 from datetime import datetime
 from abc import ABC, abstractmethod
-from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE, LLAMA_URL, LLAMA_MODEL
+from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE, LLAMA_URL, LLAMA_MODEL, THRESHOLD,FIX_ANSWER
 
 # Set the API key for OpenAI once, assuming this is a module-level operation
 openai.api_key = OPENAI_API_KEY
@@ -37,6 +37,8 @@ class Llama(ChatBot):
     def gen_prompt(self, info):
         return super().gen_prompt(info)
 
+    def get_confidence(self, info):
+        return ('Rate my email as an application email on a scale of 1 to 100. return a a json \{"score": int\}  Here is the mail body: ' + info )
 
     def gen_prompt_company(self, info):
         return ('what is the company I appied? return a json \{"Company": string\} Here is the mail body: ' + info)
@@ -47,24 +49,43 @@ class Llama(ChatBot):
     def gen_prompt_next_step(self, info):
         return ('what should be next step in the application process as an applicant? return a json \{"NextStep": string\} Here is the mail body: ' + info)
     
-    def send_request(self, prompt):
-        data = {
-            "model": self.model,
-            "prompt": prompt,
-            "format": "json",
-            "stream": False
-        }
+    def send_request(self, prompt, fix):
+        data = None
+        if fix:
+            data = {
+                "model": self.model,
+                "prompt": prompt,
+                "format": "json",
+                "stream": False,
+                "options": {"seed": 42}
+            }
+        else:
+            data = {
+                "model": self.model,
+                "prompt": prompt,
+                "format": "json",
+                "stream": False
+            }
         res = requests.post(self.url, json=data)
         return json.loads(res.text)["response"]
+
     
     def get_content(self, info):
-        
+        confidence = self.get_confidence(info['body'])
+        level = self.send_request(confidence, FIX_ANSWER)
+        print(level)
+        try:
+            score = int(json.loads(level)["score"])
+            if score < THRESHOLD:
+                return ('Failed', "Not a application email")
+        except Exception:
+            return ('Failed', 'cannot predict score')
         prompt1 = self.gen_prompt_company(info['body'])
-        name = self.send_request(prompt1)
+        name = self.send_request(prompt1, FIX_ANSWER)
         prompt2 = self.gen_prompt_state(info['body'])
-        state = self.send_request(prompt2)
+        state = self.send_request(prompt2, FIX_ANSWER)
         prompt3 = self.gen_prompt_next_step(info['body'])
-        step = self.send_request(prompt3)
+        step = self.send_request(prompt3, FIX_ANSWER)
         try:
             info['company'] = json.loads(name)["Company"]
             info['state'] = json.loads(state)["State"]
@@ -83,7 +104,6 @@ class Llama(ChatBot):
                     month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
                 except ValueError:
                     logging.warn("Unable to parse date")
-            print(info)
             info['state'] = json.dumps({info['state']:month_day_year_time})
             info['rank'] = date_object
             return ('Succeed', info)
