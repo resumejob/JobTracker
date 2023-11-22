@@ -1,5 +1,6 @@
 import os
 
+THRESHOLD = 50
 
 OPENAI_API_KEY  = os.environ.get('OPENAI_API_KEY')
 MODEL = 'gpt-4-1106-preview'
@@ -14,7 +15,7 @@ PRICE = {
             "gpt-3.5-turbo-0613": (0.0015, 0.0020)
         }
 KEYWORD = set(['received', 'confirmation', 'apply', 'application', 'reviewing', 'interview', 'schedule', 'resume', 'evaluating', 'screening', 'assessment', 'hiring', 'onboarding', 'offer', 'salary', 'unfortunately', 'rejection', 'forword', 'feedback', 'interested'])
-FUNCTION = [
+FUNCTION_INFO = [
     {
         'name': 'get_email_info',
         'description': 'return the info from email content with JSON format ',
@@ -35,6 +36,23 @@ FUNCTION = [
                 },
             },
             'required': ['company', 'state', 'next_step'],
+        },
+    }
+]
+
+FUNCTION_THRESHOLD = [
+    {
+        'name': 'get_threshold',
+        'description': 'return the rate of email as an application email on a scale of 1 to 100 from email content in JSON format ',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'score': {
+                    'type': 'integer',
+                    'description': 'the rate',
+                },
+            },
+            'required': ['score'],
         },
     }
 ]

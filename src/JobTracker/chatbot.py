@@ -3,7 +3,7 @@ import openai
 import tiktoken
 import logging
 from abc import ABC, abstractmethod
-from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE
+from .config import OPENAI_API_KEY, FUNCTION_THRESHOLD, MODEL, PRICE, FUNCTION_INFO, THRESHOLD
 
 # Set the API key for OpenAI once, assuming this is a module-level operation
 openai.api_key = OPENAI_API_KEY
@@ -44,44 +44,62 @@ class ChatGPT(ChatBot):
         message = []
         for mail in mails:
             message.append({'role': 'user', 'content': self.gen_prompt(mail['body'])})
+            message.append({'role': 'user', 'content': self.gen_prompt_threshold(mail['body'])})
         token = self.num_tokens_from_messages(message, MODEL)
         prices = self.pricing_for_1k_tokens(MODEL)
         input_price = prices[0] * token / 1000.0
         return f"{token} prompt tokens in total. Need $ {str(round(input_price, 5))} for input."
+    
+    def chatgpt_api_call(self, prompt, function, function_call='auto'):
+        try:
+            completion = openai.ChatCompletion.create(
+                model=MODEL,
+                messages=[{'role': 'user', 'content': prompt}],
+                functions=function,
+                function_call=function_call
+            )
+        except openai.error.OpenAIError as e:
+            return ('Failed', f'OpenAI API error: {str(e)}')
+        except Exception as e:
+            return ('Failed', f'An unexpected error occurred: {str(e)}')
+        return ('Succeed', completion)
 
     def gen_prompt(self, info):
         """Generate a prompt for the chatbot."""
         return ('If this is a mail from a company I applied to or interviewed with before, '
                 'use get_mail_info to get information, here is the mail body: ' + info)
+    def gen_prompt_threshold(self, info):
+        return ('If this is a mail from a company I applied to or interviewed with before, '
+                'use get_threshold to get the rate, here is the mail body: ' + info)
 
     def get_content(self, info):
         """Get content from the chatbot based on the provided information."""
-        prompt = self.gen_prompt(info['body'])
-        try:
-            completion = openai.ChatCompletion.create(
-                model=MODEL,
-                messages=[{'role': 'user', 'content': prompt}],
-                functions=FUNCTION,
-                function_call='auto'
-            )
-        except openai.error.OpenAIError as e:
-            return ('Failed', f'OpenAI API error: {str(e)}')
-        except json.JSONDecodeError:
-            return ('Failed', 'Failed to decode JSON from function call')
-        else:
-            if completion.choices[0].finish_reason == 'function_call':
-                res = completion.choices[0].message['function_call']['arguments']
-                res = json.loads(res)
-                try:
-                    info['company'] = res['company']
-                    info['state'] = res['state']
-                    info['next_step'] = res['next_step']
-                except KeyError:
-                    return ('Failed', 'JSON not formatted correctly')
-                else:
-                    return ('Succeed', info)
+        response, completion = self.chatgpt_api_call(self.gen_prompt_threshold(info['body']), FUNCTION_THRESHOLD)
+        if response != "Succeed":
+            return (response, completion)
+        if completion.choices[0].finish_reason == 'function_call':
+            res = completion.choices[0].message['function_call']['arguments']
+            res = json.loads(res)
+            if res['score'] < THRESHOLD:
+                return ('Failed', 'Not an application email')
+            
+        response, completion = self.chatgpt_api_call(self.gen_prompt(info['body']), FUNCTION_INFO)
+        if response != "Succeed":
+            return (response, completion)
+
+        if completion.choices[0].finish_reason == 'function_call':
+            res = completion.choices[0].message['function_call']['arguments']
+            res = json.loads(res)
+            try:
+                info['company'] = res['company']
+                info['state'] = res['state']
+                info['next_step'] = res['next_step']
+            except KeyError:
+                return ('Failed', 'JSON not formatted correctly')
             else:
-                return ('Failed', 'Not related to a job application or interview process')
+                return ('Succeed', info)
+        else:
+            return ('Failed', 'Not related to a job application or interview process')
 
     def num_tokens_from_messages(self, messages, model="gpt-4-1106-preview"):
         """Return the number of tokens used by a list of messages."""
