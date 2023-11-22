@@ -55,7 +55,8 @@ class TestChatGPT(unittest.TestCase):
                 'arguments': json.dumps({
                     'company': 'TestCompany',
                     'state': 'TestState',
-                    'next_step': 'TestNextStep'
+                    'next_step': 'TestNextStep',
+                    'score' : 100
                 })
             }
         }
