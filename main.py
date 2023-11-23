@@ -1,7 +1,7 @@
 import argparse
 import logging
 import csv
-
+from tqdm import tqdm
 from src.JobTracker.utils import EmailMessage
 from src.JobTracker.chatbot import ChatGPT
 
@@ -29,8 +29,8 @@ def process_email(email_path):
         elif k.lower() == "n":
             logging.info("---------Stop processing emails---------")
             return
-    for mail in mail_info:
-        state, data = chatbot.get_content(mail)
+    for mail in tqdm(range(len(mail_info)), desc="Processing", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]"):
+        state, data = chatbot.get_content(mail_info[mail])
         if state == 'Succeed':
             res.append(data)
     return res
