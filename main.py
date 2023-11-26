@@ -4,11 +4,12 @@ import csv
 
 from src.JobTracker.utils import EmailMessage
 from src.JobTracker.chatbot import ChatGPT
+from src.JobTracker.config import AUTO_SAVE_EMAIL
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-def process_email(email_path):
+def process_email(email_path, output_csv):
     '''
     Process the emails at the given path and return the results.
 
@@ -29,25 +30,38 @@ def process_email(email_path):
         elif k.lower() == "n":
             logging.info("---------Stop processing emails---------")
             return
+    email_counter = 0  
     for mail in mail_info:
         state, data = chatbot.get_content(mail)
         if state == 'Succeed':
             res.append(data)
-    return res
+            email_counter += 1
+            if email_counter % AUTO_SAVE_EMAIL == 0:
+                export_to_csv(res, output_csv)
+                res = []
+    return res, email_counter
 
 def export_to_csv(data, filename):
-    with open(filename, mode='w', newline='', encoding='utf-8') as csvfile:
+    file_exists = False
+    try:
+        with open(filename, 'r', newline='', encoding='utf-8') as csvfile:
+            file_exists = True
+    except FileNotFoundError:
+        pass
+    mode = 'a' if file_exists else 'w'
+    with open(filename, mode=mode, newline='', encoding='utf-8') as csvfile:
         fieldnames = data[0].keys()
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
+        if not file_exists:
+            writer.writeheader()
         for row in data:
             writer.writerow(row)
 
 def main(email_path, output_csv):
-    result = process_email(email_path)
-    if result:
+    result, count = process_email(email_path, output_csv)
+    if count > 0:
         export_to_csv(result, output_csv)
-        logging.info(f"Processed emails successfully and exported to CSV at {output_csv}.")
+        logging.info(f"Processed {str(count)} emails successfully and exported to CSV at {output_csv}.")
     else:
         logging.info("No emails processed.")
 
