@@ -42,15 +42,19 @@ class Llama(ChatBot):
 
     def gen_prompt_company(self, info):
         return ('what is the company I appied? return a json \{"Company": string\} Here is the mail body: ' + info)
-    
+
     def gen_prompt_state(self, info):
         return ('what is the state of this application? return a json \{"State": string\} Here is the mail body: ' + info)
 
     def gen_prompt_next_step(self, info):
         return ('what should be next step in the application process as an applicant? return a json \{"NextStep": string\} Here is the mail body: ' + info)
-    
+
     def send_request(self, prompt, fix):
         data = None
+        proxies = {
+            "http": None,
+            "https": None,
+        }
         if fix:
             data = {
                 "model": self.model,
@@ -66,20 +70,12 @@ class Llama(ChatBot):
                 "format": "json",
                 "stream": False
             }
-        res = requests.post(self.url, json=data)
+        res = requests.post(self.url, json=data, proxies=proxies)
         return json.loads(res.text)["response"]
 
-    
     def get_content(self, info):
         confidence = self.get_confidence(info['body'])
         level = self.send_request(confidence, FIX_ANSWER)
-        print(level)
-        try:
-            score = int(json.loads(level)["score"])
-            if score < THRESHOLD:
-                return ('Failed', "Not a application email")
-        except Exception:
-            return ('Failed', 'cannot predict score')
         prompt1 = self.gen_prompt_company(info['body'])
         name = self.send_request(prompt1, FIX_ANSWER)
         prompt2 = self.gen_prompt_state(info['body'])
@@ -107,7 +103,8 @@ class Llama(ChatBot):
             info['state'] = json.dumps({info['state']:month_day_year_time})
             info['rank'] = date_object
             return ('Succeed', info)
-    
+
+
 class ChatGPT(ChatBot):
     """Concrete implementation of a ChatBot using OpenAI's GPT."""
 
