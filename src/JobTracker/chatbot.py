@@ -2,8 +2,10 @@ import json
 import openai
 import tiktoken
 import logging
+import requests
+from datetime import datetime
 from abc import ABC, abstractmethod
-from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE
+from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE, LLAMA_URL, LLAMA_MODEL, THRESHOLD,FIX_ANSWER
 
 # Set the API key for OpenAI once, assuming this is a module-level operation
 openai.api_key = OPENAI_API_KEY
@@ -24,6 +26,83 @@ class ChatBot(ABC):
     def get_content(self, info):
         """Abstract method to get content from the chatbot."""
         pass
+
+
+class Llama(ChatBot):
+    def __init__(self) -> None:
+        super().__init__()
+        self.url = LLAMA_URL
+        self.model= LLAMA_MODEL
+
+    def gen_prompt(self, info):
+        return super().gen_prompt(info)
+
+    def get_confidence(self, info):
+        return ('Rate my email as an application email on a scale of 1 to 100. return a a json \{"score": int\}  Here is the mail body: ' + info )
+
+    def gen_prompt_company(self, info):
+        return ('what is the company I appied? return a json \{"Company": string\} Here is the mail body: ' + info)
+
+    def gen_prompt_state(self, info):
+        return ('what is the state of this application? return a json \{"State": string\} Here is the mail body: ' + info)
+
+    def gen_prompt_next_step(self, info):
+        return ('what should be next step in the application process as an applicant? return a json \{"NextStep": string\} Here is the mail body: ' + info)
+
+    def send_request(self, prompt, fix):
+        data = None
+        proxies = {
+            "http": None,
+            "https": None,
+        }
+        if fix:
+            data = {
+                "model": self.model,
+                "prompt": prompt,
+                "format": "json",
+                "stream": False,
+                "options": {"seed": 42}
+            }
+        else:
+            data = {
+                "model": self.model,
+                "prompt": prompt,
+                "format": "json",
+                "stream": False
+            }
+        res = requests.post(self.url, json=data, proxies=proxies)
+        return json.loads(res.text)["response"]
+
+    def get_content(self, info):
+        confidence = self.get_confidence(info['body'])
+        level = self.send_request(confidence, FIX_ANSWER)
+        prompt1 = self.gen_prompt_company(info['body'])
+        name = self.send_request(prompt1, FIX_ANSWER)
+        prompt2 = self.gen_prompt_state(info['body'])
+        state = self.send_request(prompt2, FIX_ANSWER)
+        prompt3 = self.gen_prompt_next_step(info['body'])
+        step = self.send_request(prompt3, FIX_ANSWER)
+        try:
+            info['company'] = json.loads(name)["Company"]
+            info['state'] = json.loads(state)["State"]
+            info['next_step'] = json.loads(step)["NextStep"]
+        except KeyError:
+            return ('Failed', 'JSON not formatted correctly')
+        except Exception:
+            return ('Failed', 'Connection to Llama failed')
+        else:
+            try:
+                date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z")
+                month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
+            except ValueError:
+                try:
+                    date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z (%Z)")
+                    month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
+                except ValueError:
+                    logging.warn("Unable to parse date")
+            info['state'] = json.dumps({info['state']:month_day_year_time})
+            info['rank'] = date_object
+            return ('Succeed', info)
 
 
 class ChatGPT(ChatBot):

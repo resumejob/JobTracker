@@ -3,12 +3,12 @@ import logging
 import csv
 
 from src.JobTracker.utils import EmailMessage
-from src.JobTracker.chatbot import ChatGPT
+from src.JobTracker.chatbot import ChatGPT, Llama
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-def process_email(email_path):
+def process_email(email_path, model):
     '''
     Process the emails at the given path and return the results.
 
@@ -18,17 +18,21 @@ def process_email(email_path):
     em = EmailMessage(email_path)
     mail_info = em.get_mail_info()
     res = []
-    chatbot = ChatGPT()
-    message = chatbot.get_cost(mail_info)
-    logging.info(message)
-    while True:
-        k = input("Enter Y to Process, N to STOP: ")
-        if k.lower() == "y":
-            logging.info("---------Keep processing emails---------")
-            break
-        elif k.lower() == "n":
-            logging.info("---------Stop processing emails---------")
-            return
+    chatbot = None
+    if model == "chatgpt":
+        chatbot = ChatGPT()
+        message = chatbot.get_cost(mail_info)
+        logging.info(message)
+        while True:
+            k = input("Enter Y to Process, N to STOP: ")
+            if k.lower() == "y":
+                logging.info("---------Keep processing emails---------")
+                break
+            elif k.lower() == "n":
+                logging.info("---------Stop processing emails---------")
+                return
+    elif model == "llama":
+        chatbot = Llama()
     for mail in mail_info:
         state, data = chatbot.get_content(mail)
         if state == 'Succeed':
@@ -43,8 +47,8 @@ def export_to_csv(data, filename):
         for row in data:
             writer.writerow(row)
 
-def main(email_path, output_csv):
-    result = process_email(email_path)
+def main(email_path, output_csv, model):
+    result = process_email(email_path, model)
     if result:
         export_to_csv(result, output_csv)
         logging.info(f"Processed emails successfully and exported to CSV at {output_csv}.")
@@ -62,5 +66,10 @@ if __name__ == "__main__":
                         help='The output path for the CSV file',
                         default='emails.csv',  # Default output filename if not specified
                         required=False)
+    parser.add_argument('-m', '--model',
+                        type=str,
+                        help='The model to process tasks. chatgpt/llama',
+                        choices=["chatgpt", "llama"],
+                        required=True)
     args = parser.parse_args()
-    main(args.path, args.output)
+    main(args.path, args.output, args.model)
