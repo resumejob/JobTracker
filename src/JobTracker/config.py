@@ -1,8 +1,12 @@
 import os
-
 AUTO_SAVE_EMAIL = 20
 OPENAI_API_KEY  = os.environ.get('OPENAI_API_KEY')
 MODEL = 'gpt-4-1106-preview'
+LLAMA_URL = "http://127.0.0.1:11434/api/generate"
+LLAMA_MODEL = "llama2"
+THRESHOLD = 30
+FIX_ANSWER = False
+
 PRICE = {
             "gpt-4-1106-preview": (0.01, 0.03),
             "gpt-4-1106-vision-preview": (0.01, 0.03),
