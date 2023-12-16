@@ -1,6 +1,6 @@
 import os
 
-AUTO_SAVE_EMAIL = 5
+AUTO_SAVE_EMAIL = 3
 OPENAI_API_KEY  = os.environ.get('OPENAI_API_KEY')
 MODEL = 'gpt-4-1106-preview'
 PRICE = {

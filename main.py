@@ -1,6 +1,7 @@
 import argparse
 import logging
 import csv
+import os
 
 from src.JobTracker.utils import EmailMessage
 from src.JobTracker.chatbot import ChatGPT
@@ -18,7 +19,7 @@ def process_email(email_path, output_csv):
     '''
     em = EmailMessage(email_path)
     mail_info = em.get_mail_info()
-    res = []
+    res = 0
     chatbot = ChatGPT()
     message = chatbot.get_cost(mail_info)
     logging.info(message)
@@ -30,38 +31,34 @@ def process_email(email_path, output_csv):
         elif k.lower() == "n":
             logging.info("---------Stop processing emails---------")
             return
-    email_counter = 0  
+    cur = []
     for mail in mail_info:
         state, data = chatbot.get_content(mail)
         if state == 'Succeed':
-            res.append(data)
-            email_counter += 1
-            if email_counter % AUTO_SAVE_EMAIL == 0:
-                export_to_csv(res, output_csv)
-                res = []
-    return res, email_counter
+            res += 1
+            cur.append(data)
+            if len(cur) % AUTO_SAVE_EMAIL == 0:
+                export_to_csv(cur, output_csv)
+                cur = []
+    if cur:
+        export_to_csv(cur, output_csv)
+    return res
 
 def export_to_csv(data, filename):
-    file_exists = False
-    try:
-        with open(filename, 'r', newline='', encoding='utf-8') as csvfile:
-            file_exists = True
-    except FileNotFoundError:
-        pass
-    mode = 'a' if file_exists else 'w'
-    with open(filename, mode=mode, newline='', encoding='utf-8') as csvfile:
+    file_exists = os.path.exists(filename)
+    with open(filename, mode="a", newline='', encoding='utf-8') as csvfile:
         fieldnames = data[0].keys()
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        if not file_exists:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames) 
+        if not file_exists:  
             writer.writeheader()
         for row in data:
             writer.writerow(row)
+    logging.info(f"Processed {str(len(data))} emails and exported to CSV at {filename}.")
 
 def main(email_path, output_csv):
-    result, count = process_email(email_path, output_csv)
-    if count > 0:
-        export_to_csv(result, output_csv)
-        logging.info(f"Processed {str(count)} emails successfully and exported to CSV at {output_csv}.")
+    result = process_email(email_path, output_csv)
+    if result > 0:
+        logging.info(f"Total {str(result)} emails Processed successfully and exported to CSV at {output_csv}.")
     else:
         logging.info("No emails processed.")
 
