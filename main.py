@@ -1,14 +1,17 @@
 import argparse
 import logging
 import csv
+import os
 
 from src.JobTracker.utils import EmailMessage
+from src.JobTracker.config import AUTO_SAVE_EMAIL
 from src.JobTracker.chatbot import ChatGPT, Llama
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-def process_email(email_path, model):
+
+def process_email(email_path, output_csv, model="chatgpt"):
     '''
     Process the emails at the given path and return the results.
 
@@ -17,7 +20,7 @@ def process_email(email_path, model):
     '''
     em = EmailMessage(email_path)
     mail_info = em.get_mail_info()
-    res = []
+    res = 0
     chatbot = None
     if model == "chatgpt":
         chatbot = ChatGPT()
@@ -33,25 +36,35 @@ def process_email(email_path, model):
                 return
     elif model == "llama":
         chatbot = Llama()
+        
     for mail in mail_info:
         state, data = chatbot.get_content(mail)
         if state == 'Succeed':
-            res.append(data)
+            res += 1
+            cur.append(data)
+            if len(cur) % AUTO_SAVE_EMAIL == 0:
+                export_to_csv(cur, output_csv)
+                cur = []
+    if cur:
+        export_to_csv(cur, output_csv)
     return res
 
 def export_to_csv(data, filename):
-    with open(filename, mode='w', newline='', encoding='utf-8') as csvfile:
+    file_exists = os.path.exists(filename)
+    with open(filename, mode="a", newline='', encoding='utf-8') as csvfile:
         fieldnames = data[0].keys()
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames) 
+        if not file_exists:  
+            writer.writeheader()
         for row in data:
             writer.writerow(row)
+    logging.info(f"Processed {str(len(data))} emails and exported to CSV at {filename}.")
 
+    
 def main(email_path, output_csv, model):
-    result = process_email(email_path, model)
-    if result:
-        export_to_csv(result, output_csv)
-        logging.info(f"Processed emails successfully and exported to CSV at {output_csv}.")
+    result = process_email(email_path, output_csv, model)
+    if result > 0:
+        logging.info(f"Total {str(result)} emails Processed successfully and exported to CSV at {output_csv}.")
     else:
         logging.info("No emails processed.")
 
