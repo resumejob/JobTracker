@@ -4,6 +4,7 @@ import csv
 import json
 from datetime import datetime
 from collections import defaultdict
+from tqdm import tqdm
 from src.JobTracker.utils import EmailMessage
 from src.JobTracker.chatbot import ChatGPT
 
@@ -33,8 +34,8 @@ def process_email(email_path):
             return
     companys = defaultdict(list)
     key = ['subject', 'sender_name', 'sender_mail', 'recipient_name', 'recipient_mail', 'date', 'body', 'length', 'company', 'state', 'next_step', 'rank']
-    for mail in mail_info:
-        state, data = chatbot.get_content(mail)
+    for mail in tqdm(range(len(mail_info)), desc="Processing", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]"):
+        state, data = chatbot.get_content(mail_info[mail])
         if state == 'Succeed':
             content = list(data.values())
             companys[data['company']].append(content)
