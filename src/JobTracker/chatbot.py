@@ -130,8 +130,8 @@ class ChatGPT(ChatBot):
 
     def gen_prompt(self, info):
         """Generate a prompt for the chatbot."""
-        return ('If this is a mail from a company I applied to or interviewed with before, '
-                'use get_mail_info to get information, here is the mail body: ' + info)
+        return (f'If this email has a {THRESHOLD}% confidence level that it is from a company I applied to or interviewed with before, '
+                f'use get_mail_info to get information, otherwise just ignore it. Here is the mail body: {info}')
 
     def get_content(self, info):
         """Get content from the chatbot based on the provided information."""

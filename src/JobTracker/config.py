@@ -3,7 +3,7 @@ OPENAI_API_KEY  = os.environ.get('OPENAI_API_KEY')
 MODEL = 'gpt-4-1106-preview'
 LLAMA_URL = "http://127.0.0.1:11434/api/generate"
 LLAMA_MODEL = "llama2"
-THRESHOLD = 30
+THRESHOLD = 80
 FIX_ANSWER = False
 
 PRICE = {

@@ -10,7 +10,7 @@ from src.JobTracker.chatbot import ChatGPT
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-def process_email(email_path, model):
+def process_email(email_path):
     '''
     Process the emails at the given path and return the results.
 
@@ -55,8 +55,8 @@ def export_to_csv(data, filename):
         for row in data:
             writer.writerow(row)
 
-def main(email_path, output_csv, model):
-    result = process_email(email_path, model)
+def main(email_path, output_csv):
+    result = process_email(email_path)
     if result:
         export_to_csv(result, output_csv)
         logging.info(f"Processed emails successfully and exported to CSV at {output_csv}.")
