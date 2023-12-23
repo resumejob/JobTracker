@@ -63,6 +63,12 @@ Roadmap
 ## Contributing
 We welcome contributions from the community. If you would like to contribute, please fork the repository and submit a pull request.
 
+[Garen](https://github.com/Garenbbbb)
+- Leveraged the ChatGPT/llama to process the email and a cost pipeline to estimate the price.
+- Merge email with same company and provide a clear view of the application timeline.
+- Increase model accuracy by adding a pre-process threashold. 
+- Increase model speed by adding Hash to avoid the duplicate email.
+
 ## License
 This project is licensed under the MIT License - see the LICENSE.md file for details.
 
