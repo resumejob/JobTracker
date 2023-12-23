@@ -5,7 +5,7 @@ import logging
 import requests
 from datetime import datetime
 from abc import ABC, abstractmethod
-from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE, LLAMA_URL, LLAMA_MODEL, THRESHOLD,FIX_ANSWER
+from .config import OPENAI_API_KEY, FUNCTION, MODEL, PRICE, LLAMA_URL, LLAMA_MODEL, THRESHOLD, FIX_ANSWER
 
 # Set the API key for OpenAI once, assuming this is a module-level operation
 openai.api_key = OPENAI_API_KEY
@@ -158,6 +158,17 @@ class ChatGPT(ChatBot):
                 except KeyError:
                     return ('Failed', 'JSON not formatted correctly')
                 else:
+                    try:
+                        date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z")
+                        month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
+                    except ValueError:
+                        try:
+                            date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z (%Z)")
+                            month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
+                        except ValueError:
+                            print("Unable to parse date")
+                    info['state'] = json.dumps({info['state']:month_day_year_time})
+                    info['rank'] = date_object
                     return ('Succeed', info)
             else:
                 return ('Failed', 'Not related to a job application or interview process')

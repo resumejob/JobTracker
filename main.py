@@ -1,9 +1,11 @@
 import argparse
 import logging
 import csv
-
+import json
+from datetime import datetime
+from collections import defaultdict
 from src.JobTracker.utils import EmailMessage
-from src.JobTracker.chatbot import ChatGPT, Llama
+from src.JobTracker.chatbot import ChatGPT
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -18,24 +20,30 @@ def process_email(email_path, model):
     em = EmailMessage(email_path)
     mail_info = em.get_mail_info()
     res = []
-    chatbot = None
-    if model == "chatgpt":
-        chatbot = ChatGPT()
-        message = chatbot.get_cost(mail_info)
-        logging.info(message)
-        while True:
-            k = input("Enter Y to Process, N to STOP: ")
-            if k.lower() == "y":
-                logging.info("---------Keep processing emails---------")
-                break
-            elif k.lower() == "n":
-                logging.info("---------Stop processing emails---------")
-                return
-    elif model == "llama":
-        chatbot = Llama()
+    chatbot = ChatGPT()
+    message = chatbot.get_cost(mail_info)
+    logging.info(message)
+    while True:
+        k = input("Enter Y to Process, N to STOP: ")
+        if k.lower() == "y":
+            logging.info("---------Keep processing emails---------")
+            break
+        elif k.lower() == "n":
+            logging.info("---------Stop processing emails---------")
+            return
+    companys = defaultdict(list)
+    key = ['subject', 'sender_name', 'sender_mail', 'recipient_name', 'recipient_mail', 'date', 'body', 'length', 'company', 'state', 'next_step', 'rank']
     for mail in mail_info:
         state, data = chatbot.get_content(mail)
         if state == 'Succeed':
+            content = list(data.values())
+            companys[data['company']].append(content)
+
+    for content in companys.values():
+        if len(content) != 0:
+            content.sort(key=lambda a: a[-1])
+            combined_list = [list(column) for column in zip(*content)]
+            data = dict(zip(key[:-1], combined_list[:-1]))
             res.append(data)
     return res
 
@@ -66,10 +74,5 @@ if __name__ == "__main__":
                         help='The output path for the CSV file',
                         default='emails.csv',  # Default output filename if not specified
                         required=False)
-    parser.add_argument('-m', '--model',
-                        type=str,
-                        help='The model to process tasks. chatgpt/llama',
-                        choices=["chatgpt", "llama"],
-                        required=True)
     args = parser.parse_args()
-    main(args.path, args.output, args.model)
+    main(args.path, args.output)
