@@ -17,6 +17,8 @@ JobTracker that relies on email to trace application status and next step.
    git clone https://github.com/resumejob/JobTracker.git
    cd JobTracker
    # It is recommended to create a virtual environment for this project before install
+   python3 -m venv .venv
+   source .venv/bin/activate
    pip install -r requirements.txt
 
 2. Configure your OpenAI API key:
@@ -26,9 +28,9 @@ JobTracker that relies on email to trace application status and next step.
 
 Export your emails in MBOX format and run the script with the following command:
 
-    python3 main.py -p path_to_your_email_file.mbox -o output_filename.csv
+    python3 main.py -p <path_to_your_email_file.mbox> -o <output_filename.csv>
 
-Replace `path_to_your_email_file.mbox` with the path to your MBOX file and `output_filename.csv` with your desired output file name.
+Replace `<path_to_your_email_file.mbox>` with the path to your MBOX file and `<output_filename.csv>` with your desired output file name.
 
 ## How It Works
 
