@@ -33,11 +33,11 @@ def process_email(email_path):
             logging.info("---------Stop processing emails---------")
             return
     companys = defaultdict(list)
-    key = ['subject', 'sender_name', 'sender_mail', 'recipient_name', 'recipient_mail', 'date', 'body', 'length', 'company', 'state', 'next_step', 'rank']
+    key = ['company', 'state', 'next_step', 'subject', 'sender_name', 'sender_mail', 'recipient_name', 'recipient_mail', 'date', 'body', 'length', 'rank']
     for mail in tqdm(range(len(mail_info)), desc="Processing", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}]"):
         state, data = chatbot.get_content(mail_info[mail])
         if state == 'Succeed':
-            content = list(data.values())
+            content = [data[k] for k in key]
             companys[data['company']].append(content)
 
     for content in companys.values():
