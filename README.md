@@ -1,8 +1,18 @@
 # JobTracker
 
-JobTracker that relies on email to trace application status and next step.
+AI powered tool to trace job application status based on emails.
+
+## Feature
+
+- Easy to customize and use, you can adjust the confidence interval threshold yourself
+- Up to 96% accuracy with 0 false positives
 
 ## Getting Started
+
+### Video Tutorial (Click to play at YouTube)
+
+[![How to use JobTracker](https://img.youtube.com/vi/RbxmKXYn8sE/0.jpg)](https://www.youtube.com/watch?v=RbxmKXYn8sE "How to use JobTracker")
+
 
 ### Prerequisites
 
@@ -32,6 +42,16 @@ Export your emails in MBOX format and run the script with the following command:
 
 Replace `<path_to_your_email_file.mbox>` with the path to your MBOX file and `<output_filename.csv>` with your desired output file name.
 
+
+## Example Output
+
+You would get
+
+![example_output](https://github.com/resumejob/JobTracker/blob/43899cd91b943d9842b7e41c6281f2d54c99420a/example_output.png)
+
+
+* checkout [example_output CSV](https://github.com/resumejob/JobTracker/blob/main/example_output.csv) for more details
+
 ## How It Works
 
 1. Access Data
@@ -56,11 +76,9 @@ Execute the following command to run tests:
 
     python3 -m unittest discover -s tests
 
-Roadmap
+## Roadmap
 
 - [ ] Support Local LLMs like Llama
-
-
 
 ## Contributing
 We welcome contributions from the community. If you would like to contribute, please fork the repository and submit a pull request.
@@ -77,3 +95,4 @@ This project is licensed under the MIT License - see the LICENSE.md file for det
 
 ### Contact
 For any queries, you can reach out to Project Maintainer.
+
