@@ -78,6 +78,7 @@ Execute the following command to run tests:
 
 ## Roadmap
 
+- [ ] Distributing to PyPi
 - [ ] Support Local LLMs like Llama
 
 ## Contributing
