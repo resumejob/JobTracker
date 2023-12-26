@@ -158,6 +158,9 @@ class ChatGPT(ChatBot):
                 except KeyError:
                     return ('Failed', 'JSON not formatted correctly')
                 else:
+                    # add initial value
+                    month_day_year_time = 'Sun, 99 Dec 9999 99:99:99 '
+                    date_object = datetime.strptime('Mon, 15 Mar 2021 14:45:30 +0000', "%a, %d %b %Y %H:%M:%S %z")
                     try:
                         date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z")
                         month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
