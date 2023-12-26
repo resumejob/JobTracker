@@ -29,10 +29,12 @@ class TestChatBot(unittest.TestCase):
     def test_gen_prompt(self, mock_model_list):
         mock_model_list.return_value = MODEL_LIST_RETURN
         chat_bot = ChatGPT()
-        info = "test email body"
-        expected_prompt = 'If this is a mail from a company I applied to or interviewed with before, ' + \
-            'use get_mail_info to get information, here is the mail body: ' + info
-        self.assertEqual(chat_bot.gen_prompt(info), expected_prompt)
+        info = "This is a test email body."
+        expected_threshold = 80  # Replace with the actual threshold value used in your method
+        expected_output = (
+            f'If this email has a {expected_threshold}% confidence level that it is from a company I applied to or interviewed with before, '
+            f'use get_mail_info to get information, otherwise just ignore it. Here is the mail body: {info}')
+        self.assertEqual(chat_bot.gen_prompt(info), expected_output)
 
 
 class TestChatGPT(unittest.TestCase):
