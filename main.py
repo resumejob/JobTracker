@@ -12,9 +12,14 @@ from src.JobTracker.chatbot import ChatGPT
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-def format_cell(item):
+def format_cell(key, item):
     "Join list elements with a newline character, remove square brackets"
     if isinstance(item, list):
+        if key in ['company', 'recipient_mail']:
+            # merge repeating values to a single value
+            if len(set(item)) == 1:
+                return str(item[0])
+
         return '\n'.join(map(str, item))
     return str(item)
 
@@ -80,7 +85,7 @@ def export_to_csv(data, filename):
         for row in data:
             # remove square and curly brackets
             # separate each item to a new line in a cell
-            formatted_row = {key: format_cell(value) for key, value in row.items()}
+            formatted_row = {key: format_cell(key, value) for key, value in row.items()}
             formatted_row['state'] = remove_curly_braces(formatted_row['state'])
             writer.writerow(formatted_row)
 
