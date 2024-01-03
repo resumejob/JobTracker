@@ -3,7 +3,6 @@ import logging
 import csv
 import json
 import re
-from datetime import datetime
 from collections import defaultdict
 from tqdm import tqdm
 from src.JobTracker.utils import EmailMessage

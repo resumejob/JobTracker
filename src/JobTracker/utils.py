@@ -1,8 +1,10 @@
 import re
 import email.utils
 import mailbox
+import pytz
 import requests
 from .config import KEYWORD
+from dateutil.parser import parse as parse_date
 from email.header import decode_header
 from email.utils import parseaddr
 from bs4 import BeautifulSoup
@@ -48,6 +50,16 @@ class EmailMessage:
             text = self.cleanup_body(soup.get_text())
         return text
 
+    def format_utc_date(self, date_str):
+        """ 
+        Format date string to UTC Time zone,
+        return unified time string and datetime object.
+        """
+        date_obj = parse_date(date_str)
+        date_obj_utc = date_obj.astimezone(pytz.utc)
+        date_str_utc = date_obj_utc.strftime("%a, %d %b %Y %H:%M:%S")
+        return date_str_utc, date_obj_utc
+
     def get_mail_info(self):
         res = []
         # Loop over every mail and get info
@@ -58,7 +70,8 @@ class EmailMessage:
                               for part, charset in subject)
             sender_name, sender_mail = email.utils.parseaddr(mail['from'])
             recipient_name, recipient_mail = email.utils.parseaddr(mail['to'])
-            date = mail['date']
+            date_str = mail['date']
+            date_str_utc, date_obj_utc = self.format_utc_date(mail['date'])
             body = self.get_mail_body(mail)
             if self.related_to_application(body + subject):
                 info['subject'] = subject
@@ -66,7 +79,9 @@ class EmailMessage:
                 info['sender_mail'] = sender_mail
                 info['recipient_name'] = recipient_name
                 info['recipient_mail'] = recipient_mail
-                info['date'] = date
+                info['date'] = date_str
+                info['date_utc'] = date_str_utc
+                info['rank'] = date_obj_utc
                 info['body'] = body
                 info['length'] = len(body)
                 res.append(info)
