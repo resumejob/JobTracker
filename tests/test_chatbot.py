@@ -47,7 +47,7 @@ class TestChatGPT(unittest.TestCase):
     @patch('openai.ChatCompletion.create')
     @patch('src.JobTracker.config')
     def test_get_content_succeed(self, mock_config, mock_openai_chatcompletion_create):
-        info = {'body': 'test email body', 'date': "Thu, 09 Nov 2023 23:27:06 +0000"}
+        info = {'body': 'test email body', 'date_utc_str': "Nov 09 2023 23:27:06"}
         mock_config.API_KEY = 'test_api_key'
         mock_config.FUNCTION = 'test_function'
         # Mock the API response
@@ -67,11 +67,9 @@ class TestChatGPT(unittest.TestCase):
         mock_response.choices = [mock_choice]
         mock_openai_chatcompletion_create.return_value = mock_response
         state, data = self.chat_gpt.get_content(info)
-        date_object = datetime.strptime(info['date'], "%a, %d %b %Y %H:%M:%S %z")
-        month_day_year_time = date_object.strftime("%b %d %Y %H:%M:%S")
         self.assertEqual(state, 'Succeed')
         self.assertEqual(data['company'], 'TestCompany')
-        self.assertEqual(data['state'], json.dumps({"TestState": month_day_year_time}))
+        self.assertEqual(data['state'], json.dumps({"TestState": "Nov 09 2023 23:27:06"}))
         self.assertEqual(data['next_step'], 'TestNextStep')
 
     @patch('openai.ChatCompletion.create')

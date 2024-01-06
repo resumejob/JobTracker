@@ -158,7 +158,7 @@ class ChatGPT(ChatBot):
                 except KeyError:
                     return ('Failed', 'JSON not formatted correctly')
                 else:
-                    info['state'] = json.dumps({info['state']:info['date_utc']})
+                    info['state'] = json.dumps({info['state']:info['date_utc_str']})
                     return ('Succeed', info)
             else:
                 return ('Failed', 'Not related to a job application or interview process')

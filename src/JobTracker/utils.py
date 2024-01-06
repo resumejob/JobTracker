@@ -57,7 +57,7 @@ class EmailMessage:
         """
         date_obj = parse_date(date_str)
         date_obj_utc = date_obj.astimezone(pytz.utc)
-        date_str_utc = date_obj_utc.strftime("%a, %d %b %Y %H:%M:%S")
+        date_str_utc = date_obj_utc.strftime("%b %d %Y %H:%M:%S")
         return date_str_utc, date_obj_utc
 
     def get_mail_info(self):
@@ -80,8 +80,8 @@ class EmailMessage:
                 info['recipient_name'] = recipient_name
                 info['recipient_mail'] = recipient_mail
                 info['date'] = date_str
-                info['date_utc'] = date_str_utc
-                info['rank'] = date_obj_utc
+                info['date_utc_str'] = date_str_utc
+                info['date_utc_obj'] = date_obj_utc
                 info['body'] = body
                 info['length'] = len(body)
                 res.append(info)
